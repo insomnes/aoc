@@ -56,11 +56,11 @@ func PartTwo(inp ParsedInput) int {
 			case "don't()":
 				active = false
 			default:
-				if _, err := fmt.Sscanf(match, "mul(%d,%d)", &a, &b); err != nil {
-					panic(fmt.Sprintf("parsing %s: %s", match, err))
-				}
 				if !active {
 					continue
+				}
+				if _, err := fmt.Sscanf(match, "mul(%d,%d)", &a, &b); err != nil {
+					panic(fmt.Sprintf("parsing %s: %s", match, err))
 				}
 				sum += a * b
 			}
