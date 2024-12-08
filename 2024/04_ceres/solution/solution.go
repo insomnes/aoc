@@ -80,7 +80,7 @@ func PartTwo(inp ParsedInput) int {
 	masCount := 0
 
 	// We can skip the first row and column for A search, caue it's 3x3 square:
-	// M . s
+	// M . S
 	// . A .
 	// M . S
 	for row := 1; row < inp.Rows; row++ {
