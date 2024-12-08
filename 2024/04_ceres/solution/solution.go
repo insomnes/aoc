@@ -79,12 +79,12 @@ func PartTwo(inp ParsedInput) int {
 	defer Track("PartTwo")()
 	masCount := 0
 
-	// We can skip the first row and column for A search, caue it's 3x3 square:
+	// We can skip first and last row and column for A search, caue it's 3x3 square:
 	// M . S
 	// . A .
 	// M . S
-	for row := 1; row < inp.Rows; row++ {
-		for col := 1; col < inp.Columns; col++ {
+	for row := 1; row < inp.Rows-1; row++ {
+		for col := 1; col < inp.Columns-1; col++ {
 			point := inp.Get(row, col)
 			if point.Value != A {
 				continue
