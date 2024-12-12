@@ -88,14 +88,14 @@ func NewGridFromSlice[T any](slice []T, columns int) (*Grid[T], error) {
 }
 
 func NewGridFromSlices[T any](slices [][]T) (*Grid[T], error) {
-	width := len(slices[0])
+	columns := len(slices[0])
 	for _, row := range slices {
-		if len(row) != width {
+		if len(row) != columns {
 			return nil, fmt.Errorf("rows have different lengths")
 		}
 	}
-	height := len(slices)
-	g := NewGrid[T](width, height)
+	rows := len(slices)
+	g := NewGrid[T](rows, columns)
 	for r, row := range slices {
 		for c, cell := range row {
 			g.Set(r, c, cell)
