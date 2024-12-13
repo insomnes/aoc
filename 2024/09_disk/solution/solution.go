@@ -233,8 +233,8 @@ func (d *Disk) FindLeftestEmptyFit(fileSize int) int {
 
 func (d *Disk) MoveFileToEmptyBlock(fileStart, fileEnd int, emptyStart int) {
 	fileID := d.Blocks[fileStart]
-	size := fileEnd - fileStart
-	d.ChangeSegmentValue(emptyStart, emptyStart+size, fileID)
+	emptyOffset := fileEnd - fileStart
+	d.ChangeSegmentValue(emptyStart, emptyStart+emptyOffset, fileID)
 	d.DeleteBlocks(fileStart, fileEnd)
 }
 
