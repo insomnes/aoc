@@ -110,7 +110,7 @@ func findDistinctWays(grid *Grid[int8], point Point[int8], cache *Grid[int]) int
 	}
 	cached := cache.Get(point.Row, point.Col).Value
 	if cached != -1 {
-		return cache.Get(point.Row, point.Col).Value
+		return cached
 	}
 
 	ways := 0
