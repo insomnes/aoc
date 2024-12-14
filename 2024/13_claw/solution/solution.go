@@ -37,12 +37,8 @@ func NewAnswerFromFloats(a, b float64) Answer {
 	return Answer{A: ansA, B: ansB, Price: price, Valid: true}
 }
 
-func NewAnswer(a, b int, maxVal int) Answer {
+func NewAnswer(a, b int) Answer {
 	if a <= 0 || b <= 0 {
-		return Answer{}
-	}
-
-	if maxVal > 0 && (a > MaxPushes || b > MaxPushes) {
 		return Answer{}
 	}
 
@@ -111,7 +107,7 @@ func (eq EquationSystem) SolveWithDeterminants() Answer {
 		return Answer{}
 	}
 
-	return NewAnswer(a, b, -1)
+	return NewAnswer(a, b)
 }
 
 func (eq EquationSystem) DeterminantA() int {
