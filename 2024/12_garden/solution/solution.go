@@ -220,15 +220,6 @@ var (
 
 var borderMasks = []int{upBorderMask, rightBorderMask, downBorderMask, leftBorderMask}
 
-func anglePointsToInt(a, b Point[rune]) int {
-	left, right := a, b
-	if a.Col > b.Col {
-		left, right = b, a
-	}
-
-	return 1000*left.Row + 100*left.Col + 10*right.Row + right.Col
-}
-
 func calcPerimeter(nCode int) int {
 	perimeter := 0
 	for _, mask := range borderMasks {

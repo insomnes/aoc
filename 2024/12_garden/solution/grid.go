@@ -40,21 +40,6 @@ func (m GridMove) String() string {
 	}
 }
 
-func (m GridMove) LeftHandSearchOrderCross() [4]GridMove {
-	switch m {
-	case MoveRight:
-		return [4]GridMove{MoveUp, MoveRight, MoveDown, MoveLeft}
-	case MoveDown:
-		return [4]GridMove{MoveRight, MoveDown, MoveLeft, MoveUp}
-	case MoveLeft:
-		return [4]GridMove{MoveDown, MoveLeft, MoveUp, MoveRight}
-	case MoveUp:
-		return [4]GridMove{MoveLeft, MoveUp, MoveRight, MoveDown}
-	default:
-		panic(fmt.Sprintf("invalid move for left hand search order cross %v", m))
-	}
-}
-
 func (m GridMove) Opposite() GridMove {
 	switch m {
 	case MoveUp:
