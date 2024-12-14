@@ -20,7 +20,7 @@ type Answer struct {
 	Valid bool
 }
 
-func NewAnswerFromfloats(a, b float64) Answer {
+func NewAnswerFromFloats(a, b float64) Answer {
 	if a < 0 || b < 0 {
 		return Answer{}
 	}
@@ -82,7 +82,7 @@ func (eq EquationSystem) Solve() Answer {
 	if a == 0.0 || b == 0.0 {
 		panic(fmt.Sprintf("zero values: a=%f, b=%f", a, b))
 	}
-	return NewAnswerFromfloats(a, b)
+	return NewAnswerFromFloats(a, b)
 }
 
 // Determinants approach (bonus: without floating point arithmetic)
