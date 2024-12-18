@@ -76,6 +76,15 @@ type Step struct {
 	Metric   int
 }
 
+func NewStartStep(g *Grid[rune]) Step {
+	return Step{
+		Row:    0,
+		Col:    0,
+		StpCnt: 0,
+		Metric: manhattanToEnd(0, 0, g),
+	}
+}
+
 func findNextSteps(g *Grid[rune], step Step, visited *Grid[Step]) []Step {
 	steps := make([]Step, 0, 4)
 	for _, neighbor := range g.GetNeighborsCross(step.Row, step.Col) {
@@ -111,12 +120,7 @@ func FindShortestPath(g *Grid[rune], less func(a, b Step) bool) int {
 	visited := NewGridWithDefault(g.Rows, g.Columns, unknownStep)
 	endRow, endCol := g.Rows-1, g.Columns-1
 
-	startStep := Step{
-		Row:    0,
-		Col:    0,
-		StpCnt: 0,
-		Metric: manhattanToEnd(0, 0, g),
-	}
+	startStep := NewStartStep(g)
 	queue := NewHeap[Step](less, 200)
 	queue.Push(startStep)
 
