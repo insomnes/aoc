@@ -70,21 +70,6 @@ func prepareStartGrid(fallingBytes FallingBytes, size int, timeFrame int) *Grid[
 	return grid
 }
 
-type Step struct {
-	Row, Col int
-	StpCnt   int
-	Metric   int
-}
-
-func NewStartStep(g *Grid[rune]) Step {
-	return Step{
-		Row:    0,
-		Col:    0,
-		StpCnt: 0,
-		Metric: manhattanToEnd(0, 0, g),
-	}
-}
-
 func findNextSteps(g *Grid[rune], step Step, visited *Grid[Step]) []Step {
 	steps := make([]Step, 0, 4)
 	for _, neighbor := range g.GetNeighborsCross(step.Row, step.Col) {
@@ -101,6 +86,21 @@ func findNextSteps(g *Grid[rune], step Step, visited *Grid[Step]) []Step {
 
 	}
 	return steps
+}
+
+type Step struct {
+	Row, Col int
+	StpCnt   int
+	Metric   int
+}
+
+func NewStartStep(g *Grid[rune]) Step {
+	return Step{
+		Row:    0,
+		Col:    0,
+		StpCnt: 0,
+		Metric: manhattanToEnd(0, 0, g),
+	}
 }
 
 func lessForDijkstra(a, b Step) bool {
