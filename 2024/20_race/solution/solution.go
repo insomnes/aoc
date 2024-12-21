@@ -144,10 +144,20 @@ func findCheats(
 	cheatDuration int,
 ) int {
 	tsCheats := 0
+	j := 0
+	for j < threshold {
+		toRemove := pathCells[j]
+		sparseGrid.RemovePoint(toRemove)
+		j++
+	}
 	for _, cell := range pathCells {
+		if j < len(pathCells) {
+			toRemove := pathCells[j]
+			sparseGrid.RemovePoint(toRemove)
+			j++
+		}
 		ts := findCellCheats(cell, sparseGrid, threshold, cheatDuration)
 		tsCheats += ts
-		sparseGrid.RemovePoint(cell)
 	}
 	return tsCheats
 }
