@@ -150,7 +150,7 @@ func findCheats(
 		sparseGrid.RemovePoint(toRemove)
 		j++
 	}
-	for _, cell := range pathCells {
+	for _, cell := range pathCells[:len(pathCells)-threshold] {
 		if j < len(pathCells) {
 			toRemove := pathCells[j]
 			sparseGrid.RemovePoint(toRemove)
