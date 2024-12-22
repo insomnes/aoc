@@ -145,12 +145,17 @@ func findCheats(
 ) int {
 	tsCheats := 0
 	j := 0
+	// Delete first cells from sparse grid till threshold,
+	// they will not give us any useful cheats
 	for j < threshold {
 		toRemove := pathCells[j]
 		sparseGrid.RemovePoint(toRemove)
 		j++
 	}
+	// We also don't need to check the last cells in the path until threshold
 	for _, cell := range pathCells[:len(pathCells)-threshold] {
+		// Each iteration we remove next (path cell + threshold) from the sparse grid
+		// this allows us to minimize the search space
 		if j < len(pathCells) {
 			toRemove := pathCells[j]
 			sparseGrid.RemovePoint(toRemove)
@@ -188,6 +193,7 @@ func findCellCheats(
 		}
 		rCol := min(cell.Col+maxColDelta, sparseGrid.NumColumns-1)
 
+		// Imaginary cells to find the left and right bounds
 		leftCell, rightCell = PathCell{Row: r, Col: lCol}, PathCell{Row: r, Col: rCol}
 		leftI, _ := slices.BinarySearchFunc(row, leftCell, LessPoint)
 		rightI, rightFound := slices.BinarySearchFunc(row, rightCell, LessPoint)
@@ -196,6 +202,7 @@ func findCellCheats(
 		}
 
 		for _, jumpCell := range row[leftI:rightI] {
+			// Do not go back or jump to the cell which is too close
 			if jumpCell.Value <= cell.Value || jumpCell.Value-cell.Value-2 < threshold {
 				continue
 			}
