@@ -64,11 +64,18 @@ func PartOne(inp ParsedInput) int {
 
 const partTwoIters = 2000
 
+// We want to count only prices for each delta and only once for secret number
+// For delta identification we use 20 bits number (5 bits for each delta part)
+// Each delta is the product of 5 prices (price window). Some price windows lead
+// to the same delta. We precalculate Price Window -> Delta key mapping.
+// For each price window we "count" the price which leads to the delta, and delta
+// will not calculate twice for the same original secret number.
 func PartTwo(inp ParsedInput) int {
 	defer Track(time.Now(), "PartTwo")
 	maxBananas := 0
 
-	allCounts := NewAllounts()
+	// Mapping of delta key to delta counts pre-calculated here
+	allCounts := NewAllCounts()
 	secretNumbers := inp
 	for _, sn := range secretNumbers {
 		findDeltasCountForSN(sn, partTwoIters, allCounts)
@@ -86,30 +93,32 @@ func PartTwo(inp ParsedInput) int {
 
 func findDeltasCountForSN(secNum int, iters int, allCounts *AllCounts) {
 	origSecNum := secNum
-	priceWindow, secNum := calcFirstPW(secNum)
-	allCounts.Click(priceWindow, origSecNum, secNum)
+	priceWindow, secNum := prepareFirstPriceWindow(secNum)
+	allCounts.Count(priceWindow, origSecNum)
 
 	for i := deltaSize + 1; i <= iters; i++ {
 		secNum = nextSecretNumber(secNum)
 		curPrice := secNum % 10
 		priceWindow = shiftPriceWindow(priceWindow, curPrice)
-		allCounts.Click(priceWindow, origSecNum, secNum)
+		// Here we count the price for each delta only once
+		// per original secret number
+		allCounts.Count(priceWindow, origSecNum)
 	}
 }
 
-type DeltaCount struct {
+type DeltaCounts struct {
 	Counts   [10]int
 	LastOrig int
 }
 
-func NewPwCount() *DeltaCount {
-	return &DeltaCount{
+func NewPwCount() *DeltaCounts {
+	return &DeltaCounts{
 		Counts:   [10]int{},
 		LastOrig: -1,
 	}
 }
 
-func (dc *DeltaCount) Click(price int, origSecNum int, secNum int) {
+func (dc *DeltaCounts) Count(price int, origSecNum int) {
 	// Do not count same secret number twice
 	if origSecNum == dc.LastOrig {
 		return
@@ -118,7 +127,7 @@ func (dc *DeltaCount) Click(price int, origSecNum int, secNum int) {
 	dc.LastOrig = origSecNum
 }
 
-func (dc *DeltaCount) Total() int {
+func (dc *DeltaCounts) Total() int {
 	total := 0
 	if dc == nil {
 		return 0
@@ -132,21 +141,21 @@ func (dc *DeltaCount) Total() int {
 type AllCounts struct {
 	// Price window as 5 numbers to delta key
 	mapping     [100_000]int
-	DeltaCounts map[int]*DeltaCount
+	DeltaCounts map[int]*DeltaCounts
 }
 
-func NewAllounts() *AllCounts {
+func NewAllCounts() *AllCounts {
 	mapping := [100_000]int{}
 	for i := 0; i < 100_000; i++ {
 		mapping[i] = calcDeltaKey(i)
 	}
 	return &AllCounts{
 		mapping:     mapping,
-		DeltaCounts: make(map[int]*DeltaCount),
+		DeltaCounts: make(map[int]*DeltaCounts),
 	}
 }
 
-func (ac *AllCounts) Click(priceWindow, origSecNum int, secNum int) {
+func (ac *AllCounts) Count(priceWindow, origSecNum int) {
 	key := ac.mapping[priceWindow]
 
 	dc, found := ac.DeltaCounts[key]
@@ -154,7 +163,7 @@ func (ac *AllCounts) Click(priceWindow, origSecNum int, secNum int) {
 		dc = NewPwCount()
 		ac.DeltaCounts[key] = dc
 	}
-	dc.Click(priceWindow%10, origSecNum, secNum)
+	dc.Count(priceWindow%10, origSecNum)
 }
 
 const (
@@ -203,7 +212,7 @@ func shiftPriceWindow(pw, next int) int {
 	return (pw%10000)*10 + next
 }
 
-func calcFirstPW(secNum int) (int, int) {
+func prepareFirstPriceWindow(secNum int) (int, int) {
 	pw := secNum % 10
 	for i := 1; i < 5; i++ {
 		secNum = nextSecretNumber(secNum)
