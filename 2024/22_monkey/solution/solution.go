@@ -68,84 +68,91 @@ func PartOne(inp ParsedInput) int {
 	return total
 }
 
-type DeltaWindow struct {
-	first  int
-	second int
-	third  int
-	fourth int
-}
+const dwSize = 4
+
+type DeltaWindow [dwSize]int
 
 func (dw *DeltaWindow) Shift(delta int) {
-	dw.first = dw.second
-	dw.second = dw.third
-	dw.third = dw.fourth
-	dw.fourth = delta
+	for i := 0; i < dwSize-1; i++ {
+		dw[i] = dw[i+1]
+	}
+	dw[dwSize-1] = delta
 }
 
-func (dw *DeltaWindow) String() string {
-	return fmt.Sprintf("(%d %d %d %d)", dw.first, dw.second, dw.third, dw.fourth)
+const (
+	keyBits   = 5
+	posOffset = 9
+	bits      = keyBits * dwSize
+)
+
+// We have numbers from -9 to 9
+// To not work with negative numbers we shift them by 9
+// So we have numbers from 0 to 18, we would need 5 bits to represent them
+// So we would have 20 bits number to represent all deltas
+func (dw *DeltaWindow) Key() int {
+	key := 0
+	for i := 0; i < dwSize; i++ {
+		key |= ((dw[i] + posOffset) << (keyBits * (dwSize - 1 - i)))
+	}
+	return key
 }
 
-func findDeltas(sn int, iters int, allUniqueDeltas map[string]map[int]int) {
-	originalSn := sn
-	// Mappint delta string to price
-	prevPrice := sn % 10
+func decodeKey(key int) DeltaWindow {
+	dw := DeltaWindow{}
+	bitMask := 1<<keyBits - 1
+	for i := 0; i < dwSize; i++ {
+		shifted := key >> (keyBits * (dwSize - 1 - i))
+		dw[i] = (shifted & bitMask) - 9
+	}
+	return dw
+}
 
-	var first, second, third, fourth int
+func calculateFirstWindow(secNum int) (DeltaWindow, int) {
+	dw := DeltaWindow{}
+	prevPrice := secNum % 10
+	for i := 0; i < dwSize; i++ {
+		secNum = nextSecretNumber(secNum)
+		curPrice := secNum % 10
+		delta := curPrice - prevPrice
+		dw[i] = delta
+		prevPrice = curPrice
+	}
 
-	sn = nextSecretNumber(sn)
-	curPrice := sn % 10
-	delta := curPrice - prevPrice
-	prevPrice = curPrice
-	first = delta
+	return dw, secNum
+}
 
-	sn = nextSecretNumber(sn)
-	curPrice = sn % 10
-	delta = curPrice - prevPrice
-	prevPrice = curPrice
-	second = delta
+func findDeltas(secNum int, iters int, allUniqueDeltas map[int]map[int]int) {
+	origSecNum := secNum
 
-	sn = nextSecretNumber(sn)
-	curPrice = sn % 10
-	delta = curPrice - prevPrice
-	prevPrice = curPrice
-	third = delta
-
-	sn = nextSecretNumber(sn)
-	curPrice = sn % 10
-	delta = curPrice - prevPrice
-	prevPrice = curPrice
-	fourth = delta
-
-	dw := DeltaWindow{first, second, third, fourth}
-	deltaKey := dw.String()
-
+	// Init first window
+	deltaWindow, secNum := calculateFirstWindow(secNum)
+	deltaKey := deltaWindow.Key()
 	snPriceMap, found := allUniqueDeltas[deltaKey]
 	if !found {
 		snPriceMap = make(map[int]int)
 	}
-	snPriceMap[originalSn] = max(snPriceMap[originalSn], curPrice)
+	// Set max price for this delta
+	curPrice := secNum % 10
+	snPriceMap[origSecNum] = max(snPriceMap[origSecNum], curPrice)
 	allUniqueDeltas[deltaKey] = snPriceMap
+	prevPrice := curPrice
 
-	for i := 5; i <= iters; i++ {
-		sn = nextSecretNumber(sn)
-		curPrice := sn % 10
+	for i := dwSize + 1; i <= iters; i++ {
+		secNum = nextSecretNumber(secNum)
+		curPrice := secNum % 10
 		delta := curPrice - prevPrice
 		prevPrice = curPrice
-		dw.Shift(delta)
+		deltaWindow.Shift(delta)
 		// Leave max price for this delta
-		deltaKey = dw.String()
+		deltaKey = deltaWindow.Key()
 
 		snPriceMap, found := allUniqueDeltas[deltaKey]
 		if !found {
 			snPriceMap = make(map[int]int)
-		} else {
-			// Only first occurrence of delta counts
-			if _, found := snPriceMap[originalSn]; found {
-				continue
-			}
+		} else if _, found := snPriceMap[origSecNum]; found {
+			continue
 		}
-		snPriceMap[originalSn] = max(snPriceMap[originalSn], curPrice)
+		snPriceMap[origSecNum] = max(snPriceMap[origSecNum], curPrice)
 		allUniqueDeltas[deltaKey] = snPriceMap
 	}
 }
@@ -154,18 +161,17 @@ const partTwoIters = 2000
 
 func PartTwo(inp ParsedInput) int {
 	defer Track(time.Now(), "PartTwo")
-	// delta -> Map{originalSn -> price}
-	allUniqueDeltas := make(map[string]map[int]int)
+	// delta as a "key" -> Map{originalSn -> price}
+	allUniqueDeltas := make(map[int]map[int]int)
 	secretNumbers := inp
 
 	for _, sn := range secretNumbers {
 		findDeltas(sn, partTwoIters, allUniqueDeltas)
 	}
 
-	maxDelta := ""
-	maxBananas := 0
+	maxDeltaKey, maxBananas := -1, 0
 
-	for delta, deltaSNPrices := range allUniqueDeltas {
+	for deltaKey, deltaSNPrices := range allUniqueDeltas {
 		deltaBananas := 0
 		for _, price := range deltaSNPrices {
 			deltaBananas += price
@@ -173,10 +179,10 @@ func PartTwo(inp ParsedInput) int {
 
 		if deltaBananas > maxBananas {
 			maxBananas = deltaBananas
-			maxDelta = delta
+			maxDeltaKey = deltaKey
 		}
 
 	}
-	fmt.Println("MAX DELTA", maxDelta, "MAX BANANAS", maxBananas)
+	fmt.Println("Delta found", decodeKey(maxDeltaKey), "Bananas:", maxBananas)
 	return maxBananas
 }
