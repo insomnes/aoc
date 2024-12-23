@@ -240,7 +240,7 @@ func PartOne(inp ParsedInput) int {
 	return total
 }
 
-func BronKerbosh(clique Set, toCheck Set, excluded Set, graph map[string]Set, knownMax Set) Set {
+func BronKerbosch(clique Set, toCheck Set, excluded Set, graph map[string]Set, knownMax Set) Set {
 	if toCheck.Empty() && excluded.Empty() {
 		return clique
 	}
@@ -259,7 +259,7 @@ func BronKerbosh(clique Set, toCheck Set, excluded Set, graph map[string]Set, kn
 		}
 		// Vertex neighbors in excluded set
 		newExcluded := excluded.Intersection(vertexConnections)
-		foundClique := BronKerbosh(newClique, newCandidates, newExcluded, graph, knownMax)
+		foundClique := BronKerbosch(newClique, newCandidates, newExcluded, graph, knownMax)
 		if foundClique.Size() > knownMax.Size() {
 			knownMax = foundClique
 		}
@@ -282,7 +282,7 @@ func PartTwo(inp ParsedInput) int {
 	for name := range lm.Computers {
 		candidates.Add(name)
 	}
-	clique := BronKerbosh(NewSet(vc+1), candidates, NewSet(vc+1), lm.LAN, NewSet(0))
+	clique := BronKerbosch(NewSet(vc+1), candidates, NewSet(vc+1), lm.LAN, NewSet(0))
 	fmt.Println("Clique size:", clique.Size())
 	password := strings.Join(clique.ToSortedSlice(), ",")
 	fmt.Println("Password:", password)
