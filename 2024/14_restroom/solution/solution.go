@@ -151,7 +151,7 @@ func safetyFactor(rows, cols int, robots []Robot) int {
 
 const (
 	trunkSeqSize = 10
-	printTree    = true
+	printTree    = false
 )
 
 func PartTwo(inp ParsedInput) int {
