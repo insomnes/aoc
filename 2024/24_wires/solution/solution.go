@@ -323,18 +323,24 @@ func PartTwo(inp ParsedInput) int {
 
 	devInfo := inp
 	adder := devInfo.CreateAdderDevice()
+	x, y := adder.Inputs()
 	wrongRes := adder.CollectOutput()
 	badBits := SearchBadBits(adder)
 	gates := make([]string, 0, 2*len(badBits))
 	for _, bit := range badBits {
+		expected := uint64((1 << bit)) + 1
 		swap := FindSwapForBit(bit, adder)
 		g1, g2 := swapAdderGates(swap, bit, adder, &devInfo)
+		afterSwap := adder.SetBitAndRun(bit, 0)
+		if afterSwap != expected {
+			panic(fmt.Sprintf("Swap %s for %d: %d != %d", swap, bit, afterSwap, expected))
+		}
+
 		gates = append(gates, g1, g2)
 	}
 	slices.Sort(gates)
-	x, y := adder.Inputs()
 	expected := x + y
-	withSwap := adder.CollectOutput()
+	withSwap := adder.RunWithInputs(x, y)
 	fmt.Println()
 	fmt.Printf(" Bad bits:  %v\n", badBits)
 	fmt.Printf("        X:  %d\n", x)
@@ -621,6 +627,8 @@ func swapGatesSxC(adder *AdderDevice, bit int, di *DeviceInfo) (string, string) 
 	}
 	// Swapped
 	carryGate := adder.gatesByOut[wireName("z", bit)]
+	newMap := swapOuts(sumGate, carryGate, adder.gatesByOut)
+	adder.gatesByOut = newMap
 
 	return carryGate.Out, sumGate.Out
 }
