@@ -327,9 +327,12 @@ func PartTwo(inp ParsedInput) int {
 	wrongRes := adder.CollectOutput()
 	badBits := SearchBadBits(adder)
 	gates := make([]string, 0, 2*len(badBits))
+	fmt.Println("\n-------------")
+	fmt.Println("    Bad bits: ", badBits)
 	for _, bit := range badBits {
 		expected := uint64((1 << bit)) + 1
 		swap := FindSwapForBit(bit, adder)
+		fmt.Printf(" Bit %02d swap:  %s\n", bit, swap)
 		g1, g2 := swapAdderGates(swap, bit, adder, &devInfo)
 		afterSwap := adder.SetBitAndRun(bit, 0)
 		if afterSwap != expected {
@@ -341,15 +344,14 @@ func PartTwo(inp ParsedInput) int {
 	slices.Sort(gates)
 	expected := x + y
 	withSwap := adder.RunWithInputs(x, y)
-	fmt.Println()
-	fmt.Printf(" Bad bits:  %v\n", badBits)
-	fmt.Printf("        X:  %d\n", x)
-	fmt.Printf("        Y:  %d\n", y)
-	fmt.Printf("   Broken:  %d\n", wrongRes)
-	fmt.Printf(" Expected:  %d\n", expected)
-	fmt.Printf("With swap:  %d\n", withSwap)
-	fmt.Printf("----------\n")
-	fmt.Printf("    Gates:  %s\n\n", strings.Join(gates, ","))
+	fmt.Println("-------------")
+	fmt.Printf("           X:  %d\n", x)
+	fmt.Printf("           Y:  %d\n", y)
+	fmt.Printf("      Broken:  %d\n", wrongRes)
+	fmt.Printf("    Expected:  %d\n", expected)
+	fmt.Printf("   With swap:  %d\n", withSwap)
+	fmt.Printf("-------------\n")
+	fmt.Printf("Gates:  %s\n\n", strings.Join(gates, ","))
 	if withSwap != expected {
 		panic("Not equal")
 	}
@@ -684,13 +686,13 @@ type gswp int
 func (g gswp) String() string {
 	switch g {
 	case AxB:
-		return "A x B"
+		return "x ^ y   <>  x & y"
 	case BxS:
-		return "B x S"
+		return "x & y   <>  Sum"
 	case DxS:
-		return "D x S"
+		return "midAND  <>  Sum"
 	case SxC:
-		return "S x C"
+		return "Sum     <>  Carry"
 	default:
 		return "Unknown"
 	}
