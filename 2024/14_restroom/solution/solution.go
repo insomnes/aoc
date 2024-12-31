@@ -2,6 +2,7 @@ package solution
 
 import (
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 	"time"
@@ -152,30 +153,68 @@ func safetyFactor(rows, cols int, robots []Robot) int {
 const (
 	trunkSeqSize = 10
 	printTree    = false
+	// Median distance delta for normal columns is in range 4.0 - 7.0
+	medianThreshold = 9.0
 )
+
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
+func averageColDistances(robots []Robot, cols int) []float64 {
+	curSum, curCount := 0, 1
+	distances := make([]float64, cols)
+	for i := 1; i < len(robots); i++ {
+		curCol, prevCol := robots[i].Col, robots[i-1].Col
+		if curCol == prevCol {
+			curSum += abs(robots[i].Row - robots[i-1].Row)
+			curCount++
+			continue
+		}
+		distances[prevCol] = float64(curSum) / float64(curCount)
+		curSum, curCount = 0, 1
+	}
+	return distances
+}
+
+func medianOfColumnDistancesDeltas(cur, prev []float64) float64 {
+	deltas := make([]float64, len(cur))
+	for i := range cur {
+		deltas[i] = math.Abs(cur[i] - prev[i])
+	}
+	slices.Sort(deltas)
+	return deltas[len(deltas)/2]
+}
 
 func PartTwo(inp ParsedInput) int {
 	defer Track(time.Now(), "PartTwo")
 	rows, cols := inputRows, inputCols
 
 	robots := slices.Clone(inp)
-	prevSF := safetyFactor(rows, cols, robots)
-	var sec int
+	slices.SortFunc(robots, robotCompare)
+	prevColDistances := averageColDistances(robots, cols)
 
-	// Safety factor is a nice proxy for entropy in the system,
-	// we are looking for the first drop in the safety factor.
+	var sec int
+	// We can calculate distance delta in the columns and find the "anomaly" in
+	// in the median of the deltas. The threshold is set to 9.0, as the normal
+	// distance delta median is in range 4.0 - 7.0.
 	for sec = 1; sec <= 10000; sec++ {
 		for i, robot := range robots {
 			newRobot := robot.Simulate(rows, cols, 1)
 			robots[i] = newRobot
 		}
-		sf := safetyFactor(rows, cols, robots)
-		if prevSF/sf > 2 {
+		slices.SortFunc(robots, robotCompare)
+		colDistances := averageColDistances(robots, cols)
+		medianDD := medianOfColumnDistancesDeltas(colDistances, prevColDistances)
+		if medianDD > medianThreshold {
 			break
 		}
-		prevSF = sf
+		prevColDistances = colDistances
 	}
-	// After we have found first sf drop, we can start searching for the
+	// After we have found first anomaly, we can start searching for the
 	// christmas tree, using the 101 cycle length. The 101 comes from the column
 	// count, as we search for the long sequence in columns.
 	robots101 := slices.Clone(robots)
