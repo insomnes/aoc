@@ -159,59 +159,88 @@ func PartTwo(inp ParsedInput) int {
 	rows, cols := inputRows, inputCols
 
 	robots := slices.Clone(inp)
-	robotsByCol := make([][]int, cols)
-	for sec := 1; sec <= 100000; sec++ {
+	prevSF := safetyFactor(rows, cols, robots)
+	var sec int
+
+	// Safety factor is a nice proxy for entropy in the system,
+	// we are looking for the first drop in the safety factor.
+	for sec = 1; sec <= 10000; sec++ {
 		for i, robot := range robots {
 			newRobot := robot.Simulate(rows, cols, 1)
-			robotsByCol[newRobot.Col] = append(robotsByCol[newRobot.Col], newRobot.Row)
 			robots[i] = newRobot
 		}
-
-		for c, column := range robotsByCol {
-			slices.Sort(column)
-			if !findSequence(column, trunkSeqSize) {
-				continue
-			}
-			if printTree {
-				fmt.Println(StringForTree(robots, rows, cols))
-				fmt.Printf("\n%d sec, found %d in column %d:\n%v\n", sec, trunkSeqSize, c, column)
-			}
-			return sec
+		sf := safetyFactor(rows, cols, robots)
+		if prevSF/sf > 2 {
+			break
 		}
-		clear(robotsByCol)
-
+		prevSF = sf
+	}
+	// After we have found first sf drop, we can start searching for the
+	// christmas tree, using the 101 cycle length. The 101 comes from the column
+	// count, as we search for the long sequence in columns.
+	robots101 := slices.Clone(robots)
+	for interval101 := sec + 101; interval101 <= 10000; interval101 += 101 {
+		for i, robot := range robots101 {
+			newRobot := robot.Simulate(rows, cols, 101)
+			robots101[i] = newRobot
+		}
+		// We are setting the robots by columns and rows for trunk search
+		slices.SortFunc(robots101, robotCompare)
+		if hasPossibleTrunk(robots101, trunkSeqSize) {
+			if printTree {
+				fmt.Println(StringForTree(robots101, rows, cols))
+			}
+			return interval101
+		}
 	}
 
-	return 0
+	return -1
 }
 
-func findSequence(toCheck []int, size int) bool {
-	if len(toCheck) < size {
-		return false
-	}
-	foundSize := 1
-	previous := toCheck[0]
-
-	for i := 1; i < len(toCheck); i++ {
-		if i+size >= len(toCheck) {
-			return false
-		}
-		num := toCheck[i]
-		if num == previous {
+func hasPossibleTrunk(robots []Robot, size int) bool {
+	seq := 0
+	prev := Robot{Col: -1, Row: -1}
+	for _, robot := range robots {
+		rowDelta := robot.Row - prev.Row
+		if robot.Col != prev.Col {
+			seq = 1
+			prev = robot
 			continue
 		}
-		if num == previous+1 {
-			foundSize++
-		} else {
-			foundSize = 1
+
+		if rowDelta == 0 {
+			continue
 		}
-		previous = num
-		if foundSize == size {
+		if rowDelta > 1 {
+			seq = 1
+		} else {
+			seq++
+		}
+
+		if seq == size {
 			return true
 		}
+
+		prev = robot
 	}
 
 	return false
+}
+
+func robotCompare(a, b Robot) int {
+	if a.Col < b.Col {
+		return -1
+	}
+	if a.Col > b.Col {
+		return 1
+	}
+	if a.Row < b.Row {
+		return -1
+	}
+	if a.Row > b.Row {
+		return 1
+	}
+	return 0
 }
 
 func StringForTree(robots []Robot, rows, cols int) string {
