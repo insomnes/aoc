@@ -159,8 +159,8 @@ func PartTwo(inp ParsedInput) int {
 	rows, cols := inputRows, inputCols
 
 	robots := slices.Clone(inp)
+	robotsByCol := make([][]int, cols)
 	for sec := 1; sec <= 100000; sec++ {
-		robotsByCol := make([][]int, cols)
 		for i, robot := range robots {
 			newRobot := robot.Simulate(rows, cols, 1)
 			robotsByCol[newRobot.Col] = append(robotsByCol[newRobot.Col], newRobot.Row)
@@ -178,6 +178,7 @@ func PartTwo(inp ParsedInput) int {
 			}
 			return sec
 		}
+		clear(robotsByCol)
 
 	}
 
