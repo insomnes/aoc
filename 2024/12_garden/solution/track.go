@@ -6,5 +6,7 @@ import (
 )
 
 func Track(start time.Time, msg string) {
-	log.Printf("%v: %v\n", msg, time.Since(start))
+	elapsed := time.Since(start)
+	log.Printf("%v: %v\n", msg, elapsed)
+	log.Printf("%v in seconds: %.6f\n", msg, elapsed.Seconds())
 }

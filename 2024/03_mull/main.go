@@ -14,6 +14,8 @@ const (
 )
 
 func main() {
+	defer solution.Track("main")()
+
 	inpPath := testPath
 	if len(os.Args) > 1 {
 		inpPath = normalPath

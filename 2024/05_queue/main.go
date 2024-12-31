@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"aoc/solution"
 )
@@ -14,6 +15,8 @@ const (
 )
 
 func main() {
+	defer solution.Track(time.Now(), "main")
+
 	inpPath := testPath
 	if len(os.Args) > 1 {
 		inpPath = normalPath
