@@ -1,7 +1,8 @@
 #!/bin/bash
 
-total=0
+set -e
 
+total=0
 # Dir only at depth 1
 for dir in $(find . -maxdepth 1 -type d | sort); do
     if [ "$dir" != "." ]; then
@@ -19,5 +20,4 @@ for dir in $(find . -maxdepth 1 -type d | sort); do
         cd ..
     fi
 done
-
 echo "Total execution time: ${total::-3} ms"
