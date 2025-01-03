@@ -73,20 +73,16 @@ const partTwoIters = 2000
 func PartTwo(inp ParsedInput) int {
 	defer Track(time.Now(), "PartTwo")
 	maxBananas := 0
+	secretNumbers := inp
 
 	// Mapping of delta key to delta counts pre-calculated here
-	allCounts := NewAllCounts()
-	secretNumbers := inp
+	allCounts := NewAllCounts(len(secretNumbers))
 	for _, sn := range secretNumbers {
 		findDeltasCountForSN(sn, partTwoIters, allCounts)
+		allCounts.Iter++
 	}
 
-	for _, dc := range allCounts.DeltaCounts {
-		total := dc.Total()
-		if total > maxBananas {
-			maxBananas = total
-		}
-	}
+	maxBananas = allCounts.Max
 
 	return maxBananas
 }
@@ -100,6 +96,7 @@ func findDeltasCountForSN(secNum int, iters int, allCounts *AllCounts) {
 		secNum = nextSecretNumber(secNum)
 		curPrice := secNum % 10
 		priceWindow = shiftPriceWindow(priceWindow, curPrice)
+
 		// Here we count the price for each delta only once
 		// per original secret number
 		allCounts.Count(priceWindow, origSecNum)
@@ -107,63 +104,89 @@ func findDeltasCountForSN(secNum int, iters int, allCounts *AllCounts) {
 }
 
 type DeltaCounts struct {
-	Counts   [10]int
 	LastOrig int
+	Sum      int
+	MaxPrice int
+	Key      int
 }
 
-func NewPwCount() *DeltaCounts {
+func NewDeltaCounts(key int) *DeltaCounts {
 	return &DeltaCounts{
-		Counts:   [10]int{},
 		LastOrig: -1,
+		Sum:      0,
+		MaxPrice: 0,
+		Key:      key,
 	}
 }
 
-func (dc *DeltaCounts) Count(price int, origSecNum int) {
+func (dc *DeltaCounts) Count(price int, origSecNum int) int {
 	// Do not count same secret number twice
 	if origSecNum == dc.LastOrig {
-		return
+		return -1
 	}
-	dc.Counts[price]++
+
+	dc.Sum += price
 	dc.LastOrig = origSecNum
+
+	return dc.Sum
 }
 
-func (dc *DeltaCounts) Total() int {
-	total := 0
-	if dc == nil {
-		return 0
+func (dc *DeltaCounts) AddPrice(price int) {
+	if price > dc.MaxPrice {
+		dc.MaxPrice = price
 	}
-	for n, count := range dc.Counts {
-		total += n * count
-	}
-	return total
 }
 
 type AllCounts struct {
 	// Price window as 5 numbers to delta key
-	mapping     [100_000]int
-	DeltaCounts map[int]*DeltaCounts
+	DeltaCounts [100_000]*DeltaCounts
+	Max         int
+	Iter        int
+	total       int
 }
 
-func NewAllCounts() *AllCounts {
-	mapping := [100_000]int{}
+func NewAllCounts(total int) *AllCounts {
+	mapping := [100_000]*DeltaCounts{}
+	prepared := make(map[int]*DeltaCounts, 55_000)
 	for i := 0; i < 100_000; i++ {
-		mapping[i] = calcDeltaKey(i)
+		key := calcDeltaKey(i)
+		dc, found := prepared[key]
+		if !found {
+			dc = NewDeltaCounts(key)
+			prepared[key] = dc
+		}
+		dc.AddPrice(i % 10)
+		mapping[i] = dc
 	}
 	return &AllCounts{
-		mapping:     mapping,
-		DeltaCounts: make(map[int]*DeltaCounts),
+		DeltaCounts: mapping,
+		Max:         0,
+		Iter:        0,
+		total:       total,
 	}
 }
 
 func (ac *AllCounts) Count(priceWindow, origSecNum int) {
-	key := ac.mapping[priceWindow]
-
-	dc, found := ac.DeltaCounts[key]
-	if !found {
-		dc = NewPwCount()
-		ac.DeltaCounts[key] = dc
+	dc := ac.DeltaCounts[priceWindow]
+	if dc == nil {
+		return
 	}
-	dc.Count(priceWindow%10, origSecNum)
+	price := priceWindow % 10
+	deltaGainUpperBound := (ac.total - ac.Iter) * dc.MaxPrice
+	if dc.Sum+deltaGainUpperBound < ac.Max {
+		ac.DeltaCounts[priceWindow] = nil
+		return
+	}
+
+	sum := dc.Count(price, origSecNum)
+	if sum == -1 {
+		return
+	}
+
+	if sum > ac.Max {
+		ac.Max = sum
+		return
+	}
 }
 
 const (
