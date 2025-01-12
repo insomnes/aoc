@@ -8,9 +8,10 @@ import (
 )
 
 type TowelInfo struct {
-	Designs  []string
-	Patterns []string
-	ByFirst  map[byte][]string
+	Designs     []string
+	Patterns    []string
+	ByFirst     map[byte][]string
+	AhoCorasick *AhoCorasick
 }
 
 type ParsedInput = TowelInfo
@@ -46,9 +47,10 @@ func ParseInput(lines []string) (ParsedInput, error) {
 	}
 
 	return TowelInfo{
-		Designs:  designs,
-		Patterns: patterns,
-		ByFirst:  byFirst,
+		Designs:     designs,
+		Patterns:    patterns,
+		ByFirst:     byFirst,
+		AhoCorasick: NewAhoCorasick(patterns),
 	}, nil
 }
 
@@ -86,6 +88,32 @@ func matchAll(design string, byFirst map[byte][]string, cache map[string]bool) b
 }
 
 func PartOne(inp ParsedInput) int {
+	defer Track(time.Now(), "PartOne")
+	total := len(inp.Designs)
+	designs := inp.Designs
+	ac := inp.AhoCorasick
+	for _, design := range designs {
+		if !ac.Match(design) {
+			total--
+		}
+	}
+
+	return total
+}
+
+func PartTwo(inp ParsedInput) int {
+	defer Track(time.Now(), "PartTwo")
+	total := 0
+	designs := inp.Designs
+	ac := inp.AhoCorasick
+	for _, design := range designs {
+		total += ac.MatchCount(design)
+	}
+
+	return total
+}
+
+func PartOneRecMem(inp ParsedInput) int {
 	defer Track(time.Now(), "PartOne")
 	total := 0
 	designs := inp.Designs
@@ -129,7 +157,7 @@ func matchAllCount(
 	return total
 }
 
-func PartTwo(inp ParsedInput) uint64 {
+func PartTwoRecMem(inp ParsedInput) uint64 {
 	defer Track(time.Now(), "PartTwo")
 
 	var total uint64 = 0
